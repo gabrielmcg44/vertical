@@ -49,8 +49,10 @@ def auxiliar_names(covid_parameters, model_parameters):
     		)
     elif model_parameters.IC_analysis == 1: # CONFIDENCE INTERVAL
         filename = (time + '_confidence_interval')
-    else: # SENSITIVITY_ANALYSIS
+    elif model_parameters.IC_analysis == 3: # SENSITIVITY_ANALYSIS
     	filename = (time + '_sensitivity_analysis')
+    else: #Rt analysis
+    	filename = (time + '_Rt')
     return filename
 
 def pos_format(title_fig,
@@ -106,16 +108,15 @@ def plot_total(Yi,Yj,name_variable,
     """
     plt.figure(fig_number, figsize = tamfig)
     plt.style.use(fig_style)
-    if (IC_analysis == 1): # CONFIDENCE INTERVAL
-        plot_median(Yi+Yj, cor[i], ls[(i)%2],'Total' + isolation_name[i], t_space)
-        plot_ci(Yi+Yj, cor[i], t_space)
-	
-    else: # SINGLE RUN
+    if (IC_analysis == 2): # SINGLE RUN
     	  plt.plot(t_space,
 		   (Yi+Yj),
 		   ls[(i)%2], 		#0: dashed linestyle, 1: solid linestyle
 		   color = cor[i],
 		   label = 'Total' + isolation_name[i])
+    else: # CONFIDENCE INTERVAL
+        plot_median(Yi+Yj, cor[i], ls[(i)%2],'Total' + isolation_name[i], t_space)
+        plot_ci(Yi+Yj, cor[i], t_space)
     		
     pos_format(title_fig, main_label_y,	main_label_x,
 	       fsLabelTitle, leg_loc, fsPlotLegend)
@@ -138,14 +139,7 @@ def plot_byage(Yi,Yj,name_variable,
     """
     plt.figure(fig_number, figsize = tamfig)
     plt.style.use(fig_style)
-    if (IC_analysis == 1): # CONFIDENCE INTERVAL
-        plot_median(Yi, cor[2*i], ls[i%2],'Elderly' + isolation_name[i], t_space)
-        plot_ci(Yi,cor[2*i],t_space)
-        plot_median(Yj, cor[1+2*i], ls[(i+1)%2],'Young' + isolation_name[i], t_space)
-        plot_ci(Yj,cor[1+2*i],t_space)
-        complemento = '_diff_isol'
-
-    else: # SINGLE RUN
+    if (IC_analysis == 2): # SINGLE RUN
         plt.plot(t_space,
 		 Yi,
 		 ls[i%2],		#0: dashed linestyle, 1: solid linestyle
@@ -157,6 +151,12 @@ def plot_byage(Yi,Yj,name_variable,
 		 color = cor[1+2*i],
 		 label = ('Young' + isolation_name[i]))
         complemento = isolation_name[i]
+    else: # CONFIDENCE INTERVAL
+        plot_median(Yi, cor[2*i], ls[i%2],'Elderly' + isolation_name[i], t_space)
+        plot_ci(Yi,cor[2*i],t_space)
+        plot_median(Yj, cor[1+2*i], ls[(i+1)%2],'Young' + isolation_name[i], t_space)
+        plot_ci(Yj,cor[1+2*i],t_space)
+        complemento = '_diff_isol'
     		
     pos_format(title_fig, main_label_y,	main_label_x,
 		             fsLabelTitle,leg_loc,fsPlotLegend)
@@ -397,7 +397,13 @@ def plots(results, covid_parameters, model_parameters, plot_dir):
 			plt.figure(3+i, figsize = tamfig)
 			plt.style.use(fig_style)
 
-			if (IC_analysis == 1): # CONFIDENCE INTERVAL
+			if (IC_analysis == 2): # Single run
+				plt.plot(t_space, Hi, ls[0], color = cor[0], label = 'Ward for Elderly')
+				plt.plot(t_space, Hj, ls[1], color = cor[1], label = 'Ward for Young')
+				plt.plot(t_space, Ui, ls[1], color = cor[2], label = 'ICU for Elderly')
+				plt.plot(t_space, Uj, ls[0], color = cor[3], label = 'ICU for Young')
+				
+			else: # Confidence interval
 				plot_median(Hi, cor[0], ls[0], 'Ward for Elderly', t_space)
 				plot_median(Hj, cor[1], ls[1], 'Ward for Young', t_space)
 				plot_median(Ui, cor[2], ls[1], 'ICU for Elderly', t_space)
@@ -407,13 +413,6 @@ def plots(results, covid_parameters, model_parameters, plot_dir):
 				plot_ci(Hj, cor[1], t_space)
 				plot_ci(Ui, cor[2], t_space)
 				plot_ci(Uj, cor[3], t_space)
-				
-			else: # SINGLE RUN
-				plt.plot(t_space, Hi, ls[0], color = cor[0], label = 'Ward for Elderly')
-				plt.plot(t_space, Hj, ls[1], color = cor[1], label = 'Ward for Young')
-				plt.plot(t_space, Ui, ls[1], color = cor[2], label = 'ICU for Elderly')
-				plt.plot(t_space, Uj, ls[0], color = cor[3], label = 'ICU for Young')
-		
 			pos_format(main_title, 'Bed Demand', main_label_x,
 				   fsLabelTitle,leg_loc,fsPlotLegend)           
             
@@ -475,7 +474,7 @@ def plots(results, covid_parameters, model_parameters, plot_dir):
 
 # FIT
 			startdate = mp.startdate
-			if ((IC_analysis == 1) and (not startdate == []) and (i == 0) ):
+			if ((IC_analysis == 4) and (not startdate == []) and (i == 0) ):
 				
 				for ifig in range(11):
 				    plt.close(ifig)
@@ -560,6 +559,6 @@ def plots(results, covid_parameters, model_parameters, plot_dir):
 							 "Fit_" + state_name + "_I" + filetype))
 
 
-	if ((IC_analysis == 1) and (not startdate == [])):
+	if ((IC_analysis == 4) and (not startdate == [])):
 		for ifig in range(11):
 			plt.close(ifig)

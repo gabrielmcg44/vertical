@@ -21,71 +21,12 @@ def run_SEIR_ODE_model(covid_parameters, model_parameters) -> pd.DataFrame:
         
     # CONDICOES INICIAIS
     # Initial conditions vector
-    SEIRHUM_0_0 = initial_conditions(mp)
+    SEIRHUM_0 = initial_conditions(mp)
     
     niveis_isolamento = len(mp.contact_reduction_elderly)
     
-    if mp.IC_analysis == 4:
-        runs = len(cp.alpha)
-        print('Rodando ' + str(runs) + ' casos')
-        print('Para ' + str(mp.t_max) + ' dias')
-        print('Para cada um dos ' + str(niveis_isolamento) + ' niveis de isolamento de entrada')
-        print('')
-
-        
-        aNumber = 20
-        tNumber = mp.t_max//aNumber
-        tNumberEnd = mp.t_max%aNumber
-        if tNumberEnd!=0:
-            aNumber+=1
-        else:
-            tNumberEnd=tNumber
-
-#        ii = 1
-        
-        DF_list = list() # list of data frames
-        for ii in range(runs): # sweeps the data frames list
-            df = pd.DataFrame()
-            for i in range(niveis_isolamento): # 2: paper
-                omega_i = mp.contact_reduction_elderly[i]
-                omega_j = mp.contact_reduction_young[i]    
-        
-                # 1: without; 2: vertical; 3: horizontal isolation 
-                    
-                # Integrate the SEIR equations over the time grid, t
-                # PARAMETROS PARA CALCULAR DERIVADAS
-                args = args_assignment(cp, mp, omega_i, omega_j, i, ii)
-                argslist = list(args)
-                SEIRHUM_0 = SEIRHUM_0_0
-                t = range(tNumber)
-                ret = odeint(derivSEIRHUM, SEIRHUM_0, t, args)
-                Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
-
-                for a in range(aNumber):
-                    if a==aNumber-1:
-                        t = range(tNumberEnd+1)
-                    else:
-                        t = range(tNumber+1)                            
-                    casa_negativa = -1
-                    SEIRHUM_0 = Si[casa_negativa], Sj[casa_negativa], Ei[casa_negativa], Ej[casa_negativa], Ii[casa_negativa], Ij[casa_negativa], Ri[casa_negativa], Rj[casa_negativa], Hi[casa_negativa], Hj[casa_negativa], dHi[casa_negativa], dHj[casa_negativa], Ui[casa_negativa], Uj[casa_negativa], dUi[casa_negativa], dUj[casa_negativa], Mi[casa_negativa], Mj[casa_negativa], pHi[casa_negativa], pHj[casa_negativa], pUi[casa_negativa], pUj[casa_negativa], pMi[casa_negativa], pMj[casa_negativa]
-                    retTemp = odeint(derivSEIRHUM, SEIRHUM_0, t, args)
-                    ret = retTemp[1:]
-                    Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
-                    t = t[1:]
-                
-                    effectiver = 1
-                    argslist[2] = (cp.gamma[ii]*effectiver*mp.population)/(Si[-1]+Sj[-1])
-                    args = tuple(argslist)
-                
-                    df = df.append(pd.DataFrame({'Si': Si, 'Sj': Sj, 'Ei': Ei, 'Ej': Ej,
-                                     'Ii': Ii, 'Ij': Ij, 'Ri': Ri, 'Rj': Rj,
-                                     'Hi': Hi, 'Hj': Hj, 'dHi': dHi, 'dHj': dHj, 'Ui': Ui, 'Uj': Uj,
-                                     'dUi': dUi, 'dUj': dUj, 'Mi': Mi, 'Mj': Mj,
-                                     'pHi': pHi, 'pHj': pHj, 'pUi': pUi, 'pUj': pUj, 'pMi': pMi, 'pMj': pMj}, index=t)
-                                        .assign(omega_i = omega_i)
-                                        .assign(omega_j = omega_j))
-            DF_list.append(df)
-    elif (mp.IC_analysis==2):
+    if mp.IC_analysis == 2:
+    
         ii = 1
         df = pd.DataFrame()
         
@@ -97,23 +38,35 @@ def run_SEIR_ODE_model(covid_parameters, model_parameters) -> pd.DataFrame:
             # Integrate the SEIR equations over the time grid, t
             # PARAMETROS PARA CALCULAR DERIVADAS
             args = args_assignment(cp, mp, omega_i, omega_j, i, ii)
-            ret = odeint(derivSEIRHUM, SEIRHUM_0_0, t, args)
-            # Update the variables
-            Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
-            plt.plot(t,pHi+pHj,Hi+Hj)
-            plt.show()
-    
-            df = df.append(pd.DataFrame({'Si': Si, 'Sj': Sj, 'Ei': Ei, 'Ej': Ej,
-                             'Ii': Ii, 'Ij': Ij, 'Ri': Ri, 'Rj': Rj,
-                             'Hi': Hi, 'Hj': Hj, 'dHi': dHi, 'dHj': dHj, 'Ui': Ui, 'Uj': Uj,
-                             'dUi': dUi, 'dUj': dUj, 'Mi': Mi, 'Mj': Mj,
-                             'pHi': pHi, 'pHj': pHj, 'pUi': pUi, 'pUj': pUj, 'pMi': pMi, 'pMj': pMj}, index=t)
-                                .assign(omega_i = omega_i)
-                                .assign(omega_j = omega_j))
+            for a in range(4):
+                t = range(5)
+                if a == 0:
+                    ret = odeint(derivSEIRHUM, SEIRHUM_0, t, args)
+                    Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
+                else:
+                    casa_negativa = -1
+                    SEIRHUM_0 = Si[casa_negativa], Sj[casa_negativa], Ei[casa_negativa], Ej[casa_negativa], Ii[casa_negativa], Ij[casa_negativa], Ri[casa_negativa], Rj[casa_negativa], Hi[casa_negativa], Hj[casa_negativa], dHi[casa_negativa], dHj[casa_negativa], Ui[casa_negativa], Uj[casa_negativa], dUi[casa_negativa], dUj[casa_negativa], Mi[casa_negativa], Mj[casa_negativa], pHi[casa_negativa], pHj[casa_negativa], pUi[casa_negativa], pUj[casa_negativa], pMi[casa_negativa], pMj[casa_negativa]
+                    ret = odeint(derivSEIRHUM, SEIRHUM_0, t, args)
+                    print(type(ret))
+                    Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
+                # Update the variables
+                #Si, Sj, Ei, Ej, Ii, Ij, Ri, Rj, Hi, Hj, dHi, dHj, Ui, Uj, dUi, dUj, Mi, Mj, pHi, pHj, pUi, pUj, pMi, pMj = ret.T
+                #plt.plot(t,pHi+pHj,Hi+Hj)
+                #plt.show()
+                df = df.append(pd.DataFrame({'Si': Si, 'Sj': Sj, 'Ei': Ei, 'Ej': Ej,
+                                 'Ii': Ii, 'Ij': Ij, 'Ri': Ri, 'Rj': Rj,
+                                 'Hi': Hi, 'Hj': Hj, 'dHi': dHi, 'dHj': dHj, 'Ui': Ui, 'Uj': Uj,
+                                 'dUi': dUi, 'dUj': dUj, 'Mi': Mi, 'Mj': Mj,
+                                 'pHi': pHi, 'pHj': pHj, 'pUi': pUi, 'pUj': pUj, 'pMi': pMi, 'pMj': pMj}, index=t)
+                                    .assign(omega_i = omega_i)
+                                    .assign(omega_j = omega_j))
+
+        t = range(mp.t_max)
         DF_list = df
-            
+        plt.plot(df.Ii)
+        plt.show()
+    
     else:
-        SEIRHUM_0 = SEIRHUM_0_0
         DF_list = list() # list of data frames
         
         runs = len(cp.alpha)
@@ -145,7 +98,7 @@ def run_SEIR_ODE_model(covid_parameters, model_parameters) -> pd.DataFrame:
                                     .assign(omega_i = omega_i)
                                     .assign(omega_j = omega_j))
             DF_list.append(df)
-
+        
     return DF_list
 
 def initial_conditions(mp):
